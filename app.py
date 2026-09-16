@@ -3,7 +3,7 @@ import pandas as pd
 import plotly.express as px
 import streamlit as st
 
-from data_utils import filter_data, load_data, neighbourhood_summary, paris_baseline, sidebar_filters
+from data_utils import COLOR_SCALE, filter_data, load_data, neighbourhood_summary, paris_baseline, sidebar_filters
 
 st.set_page_config(page_title="Où louer à Paris ?", page_icon="🏠", layout="wide")
 
@@ -31,6 +31,11 @@ occupied_days = 365 - filtered["availability_365"].mean()
 occupied_days_paris = 365 - baseline["availability_365"].mean()
 
 n_competitors = len(filtered)
+# Concurrents moyens par quartier sélectionné, comparé à la moyenne Paris
+# (total Paris / nb d'arrondissements) : une sélection sur 1 seul quartier
+# se compare ainsi équitablement à "un quartier parisien typique".
+avg_competitors_per_neigh = n_competitors / filtered["neighbourhood"].nunique()
+avg_competitors_per_neigh_paris = len(baseline) / baseline["neighbourhood"].nunique()
 
 col1, col2, col3 = st.columns(3)
 col1.metric(
@@ -44,13 +49,20 @@ col2.metric(
     f"{occupied_days:.0f} j/an",
     delta=f"{occupied_days - occupied_days_paris:+.0f} j vs moyenne Paris",
 )
-col3.metric("Concurrents actifs (sélection)", f"{n_competitors:,}".replace(",", " "))
+col3.metric(
+    "Concurrents actifs (sélection)",
+    f"{n_competitors:,}".replace(",", " "),
+    delta=f"{avg_competitors_per_neigh - avg_competitors_per_neigh_paris:+.0f} / quartier vs moyenne Paris",
+    delta_color="inverse",
+)
 
 st.caption(
     "Comparaisons faites contre la médiane/moyenne Paris entière (prix nettoyé 10-2000€), "
     "indépendamment des filtres, pour situer la sélection actuelle. Occupation estimée = "
     "365 − disponibilité affichée (proxy : un jour bloqué au calendrier n'est pas "
-    "forcément loué, mais reste un bon indicateur de demande relative entre quartiers)."
+    "forcément loué, mais reste un bon indicateur de demande relative entre quartiers). "
+    "Concurrents actifs comparés en moyenne par quartier, pour rester équitable quel que "
+    "soit le nombre d'arrondissements sélectionnés."
 )
 
 st.divider()
@@ -86,7 +98,7 @@ with chart_col:
         y="neighbourhood",
         orientation="h",
         color="prix_median",
-        color_continuous_scale="RdYlGn_r",
+        color_continuous_scale=COLOR_SCALE,
         labels={"prix_median": "Prix médian (€/nuit)", "neighbourhood": ""},
         height=480,
     )

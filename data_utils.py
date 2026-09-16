@@ -12,6 +12,12 @@ import streamlit as st
 # sans les supprimer du fichier source.
 PRICE_MIN, PRICE_MAX = 10, 2000
 
+# Échelle de couleur unique utilisée sur tous les graphiques du dashboard :
+# vert = favorable à l'investisseur, rouge = défavorable. Appliquée à des
+# métriques "plus c'est bas mieux c'est" (prix, concurrence, score) pour que
+# la lecture couleur reste cohérente d'une page à l'autre.
+COLOR_SCALE = "RdYlGn_r"
+
 
 @st.cache_data
 def load_data(path: str = "listings.csv") -> pd.DataFrame:

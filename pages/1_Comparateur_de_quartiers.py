@@ -1,14 +1,14 @@
 import plotly.express as px
 import streamlit as st
 
-from data_utils import filter_data, load_data, neighbourhood_summary, sidebar_filters
+from data_utils import COLOR_SCALE, filter_data, load_data, neighbourhood_summary, sidebar_filters
 
 st.set_page_config(page_title="Comparateur de quartiers", page_icon="📊", layout="wide")
 
-st.title("📊 Comparateur de quartiers")
+st.title("📊 Quel arrondissement offre le meilleur compromis prix / occupation / concurrence ?")
 st.markdown(
-    "Détail par arrondissement pour affiner le choix : prix, occupation estimée et "
-    "intensité concurrentielle, réactifs aux filtres de la sidebar."
+    "Le prix seul ne suffit pas : détail par arrondissement pour arbitrer entre prix, "
+    "occupation estimée et intensité concurrentielle, réactif aux filtres de la sidebar."
 )
 
 df = load_data()
@@ -19,12 +19,35 @@ if filtered.empty:
     st.warning("Aucune annonce ne correspond à cette sélection de filtres.")
     st.stop()
 
-summary = (
-    neighbourhood_summary(filtered)
-    .sort_values("prix_median")
-    .rename(columns={"neighbourhood": "Arrondissement"})
+summary = neighbourhood_summary(filtered).sort_values("prix_median")
+
+# --- Zone KPIs -------------------------------------------------------------
+cheapest = summary.loc[summary["prix_median"].idxmin()]
+busiest = summary.loc[summary["jours_occupes_proxy"].idxmax()]
+price_spread = summary["prix_median"].max() - summary["prix_median"].min()
+
+k1, k2, k3 = st.columns(3)
+k1.metric("Écart de prix entre quartiers affichés", f"{price_spread:.0f} €")
+k2.metric(
+    "Quartier le + abordable",
+    cheapest["neighbourhood"],
+    f"{cheapest['prix_median']:.0f} €/nuit",
+    delta_color="off",
+)
+k3.metric(
+    "Quartier le + occupé",
+    busiest["neighbourhood"],
+    f"{busiest['jours_occupes_proxy']:.0f} j/an",
+    delta_color="off",
+)
+st.caption(
+    "KPIs calculés sur les arrondissements actuellement affichés (dépend des filtres "
+    "sidebar), pour situer rapidement les extrêmes avant de lire le détail ci-dessous."
 )
 
+st.divider()
+
+summary = summary.rename(columns={"neighbourhood": "Arrondissement"})
 col1, col2 = st.columns(2)
 
 with col1:
@@ -35,7 +58,7 @@ with col1:
         y="Arrondissement",
         orientation="h",
         color="prix_median",
-        color_continuous_scale="RdYlGn_r",
+        color_continuous_scale=COLOR_SCALE,
         labels={"prix_median": "Prix médian (€/nuit)"},
         height=550,
     )
@@ -50,7 +73,7 @@ with col2:
         y="Arrondissement",
         orientation="h",
         color="nb_concurrents",
-        color_continuous_scale="Blues",
+        color_continuous_scale=COLOR_SCALE,
         labels={"nb_concurrents": "Annonces concurrentes"},
         height=550,
     )

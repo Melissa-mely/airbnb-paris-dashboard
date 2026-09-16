@@ -1,6 +1,7 @@
+import plotly.express as px
 import streamlit as st
 
-from data_utils import MIN_LISTINGS_FOR_RANKING, filter_data, load_data, neighbourhood_summary, sidebar_filters
+from data_utils import COLOR_SCALE, MIN_LISTINGS_FOR_RANKING, filter_data, load_data, neighbourhood_summary, sidebar_filters
 
 st.set_page_config(page_title="Top opportunités", page_icon="🏆", layout="wide")
 
@@ -9,6 +10,17 @@ st.markdown(
     "Classement des arrondissements combinant **prix**, **occupation estimée** et "
     "**concurrence** en un score unique, pour répondre directement à la question "
     "posée par ce dashboard."
+)
+
+st.info(
+    "**Sur quelle base ce classement est-il fait ?** Chaque arrondissement est classé "
+    "séparément sur 3 critères — prix médian (le plus bas gagne), occupation estimée "
+    "(la plus haute gagne), nombre de concurrents actifs (le plus bas gagne) — puis on "
+    "fait la **moyenne des 3 rangs** obtenus. Un score de 1 signifierait 1er sur les "
+    "3 critères à la fois ; plus le score est bas, meilleure est l'opportunité. Les "
+    f"3 critères comptent à poids égal, et les arrondissements avec moins de "
+    f"{MIN_LISTINGS_FOR_RANKING} annonces actives sont exclus (échantillon trop petit "
+    "pour un prix médian fiable)."
 )
 
 df = load_data()
@@ -52,6 +64,19 @@ for col, (_, row), medal in zip(cols, top3.iterrows(), medals):
 st.divider()
 
 st.subheader("Classement complet")
+fig_score = px.bar(
+    summary.sort_values("score", ascending=False),
+    x="score",
+    y="neighbourhood",
+    orientation="h",
+    color="score",
+    color_continuous_scale=COLOR_SCALE,
+    labels={"score": "Score (rang moyen, plus bas = mieux)", "neighbourhood": ""},
+    height=550,
+)
+fig_score.update_layout(coloraxis_showscale=False, margin=dict(l=0, r=0, t=10, b=0))
+st.plotly_chart(fig_score, use_container_width=True)
+
 st.dataframe(
     summary[["neighbourhood", "prix_median", "jours_occupes_proxy", "nb_concurrents", "score"]].rename(
         columns={
