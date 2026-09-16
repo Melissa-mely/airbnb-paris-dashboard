@@ -4,8 +4,8 @@
 
 ## Message clé
 
-> Les arrondissements périphériques (Ménilmontant, Buttes-Chaumont, Gobelins) offrent un
-> meilleur point d'entrée sur le marché Airbnb parisien que le centre, déjà cher et saturé.
+> Les arrondissements périphériques (Gobelins, Ménilmontant, Buttes-Chaumont) offrent un
+> meilleur rapport prix/occupation que le centre parisien, plus cher sans être plus demandé.
 
 ## Audience cible
 
@@ -17,7 +17,7 @@ le quartier et le type de logement à privilégier.
 | KPI | Vanity ou actionable ? | Justification |
 |---|---|---|
 | **Prix médian par quartier** | Actionable | Indique le revenu potentiel par nuit dans chaque arrondissement. La médiane est utilisée plutôt que la moyenne car les prix contiennent des valeurs aberrantes (jusqu'à 97 000 €/nuit) qui fausseraient une moyenne. |
-| **Disponibilité moyenne sur 365 jours** | Actionable | Proxy de saturation du marché : un quartier où les annonces affichent 0 jour disponible est déjà occupé par des locations tournant en continu, donc plus difficile à pénétrer pour un nouvel entrant. |
+| **Occupation estimée (365 − disponibilité)** | Actionable | Proxy de demande locative par quartier. Attention : la disponibilité brute (`availability_365`) est en réalité **plus élevée** dans les quartiers centraux et chers que dans les quartiers périphériques bon marché — on l'inverse donc (365 − disponibilité) pour obtenir un indicateur qui va dans le sens du message (plus de jours occupés = plus de demande), au lieu d'un indicateur qui contredirait le prix. |
 | **Nombre de concurrents actifs par quartier** | Actionable | Mesure l'intensité concurrentielle locale. Volontairement calculé par quartier (et non comme un total Paris, qui serait une vanity metric sans valeur décisionnelle). |
 
 ## Nettoyage des données appliqué
@@ -29,11 +29,16 @@ le quartier et le type de logement à privilégier.
   l'échelle des graphiques.
 - **`neighbourhood_group`** : colonne vide à 100 %, ignorée. `neighbourhood` (= arrondissement)
   est utilisé comme seule granularité géographique.
+- **Arrondissements sous-échantillonnés** : exclus des classements (pages Comparateur et
+  Top opportunités) en dessous de 30 annonces actives, pour éviter qu'un petit échantillon
+  ne fausse le prix médian ou le score.
 
 ## Structure du dashboard
 
 - **Sidebar** : filtres sur `room_type` et `neighbourhood`, + un curseur de fourchette de prix.
 - **Page 1 — Vue synthèse** : zone KPIs (3 indicateurs contextualisés centre vs périphérie)
-  + carte des arrondissements colorée par prix médian.
-- **Page 2 — Comparateur de quartiers** : graphique en barres du prix médian par quartier et
-  tableau détaillé, réactifs aux filtres de la sidebar.
+  + carte des arrondissements colorée par prix, + prix médian par quartier.
+- **Page 2 — Comparateur de quartiers** : détail par arrondissement (prix, occupation estimée,
+  concurrence), réactif aux filtres de la sidebar.
+- **Page 3 — Top opportunités** : classement des arrondissements par score combiné
+  (prix + occupation + concurrence), conclusion directement actionnable pour l'audience cible.

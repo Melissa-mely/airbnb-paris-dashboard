@@ -1,13 +1,13 @@
 import plotly.express as px
 import streamlit as st
 
-from data_utils import filter_data, load_data, sidebar_filters
+from data_utils import filter_data, load_data, neighbourhood_summary, sidebar_filters
 
 st.set_page_config(page_title="Comparateur de quartiers", page_icon="📊", layout="wide")
 
 st.title("📊 Comparateur de quartiers")
 st.markdown(
-    "Détail par arrondissement pour affiner le choix : prix, disponibilité et "
+    "Détail par arrondissement pour affiner le choix : prix, occupation estimée et "
     "intensité concurrentielle, réactifs aux filtres de la sidebar."
 )
 
@@ -20,15 +20,8 @@ if filtered.empty:
     st.stop()
 
 summary = (
-    filtered.groupby("neighbourhood")
-    .agg(
-        prix_median=("price", "median"),
-        disponibilite_moyenne=("availability_365", "mean"),
-        nb_concurrents=("id", "count"),
-    )
-    .round(0)
+    neighbourhood_summary(filtered)
     .sort_values("prix_median")
-    .reset_index()
     .rename(columns={"neighbourhood": "Arrondissement"})
 )
 
@@ -69,10 +62,14 @@ st.dataframe(
     summary.rename(
         columns={
             "prix_median": "Prix médian (€)",
-            "disponibilite_moyenne": "Disponibilité moyenne (j/an)",
+            "jours_occupes_proxy": "Occupation estimée (j/an)",
             "nb_concurrents": "Concurrents actifs",
         }
     ),
     use_container_width=True,
     hide_index=True,
+)
+st.caption(
+    "Occupation estimée = 365 − disponibilité moyenne affichée (proxy de demande, "
+    "pas un taux de réservation réel)."
 )

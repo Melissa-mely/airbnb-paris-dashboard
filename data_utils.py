@@ -76,3 +76,35 @@ def paris_baseline(df: pd.DataFrame) -> pd.DataFrame:
     """Référence Paris entière (prix nettoyé uniquement), pour les comparaisons
     des KPIs face à la sélection filtrée par l'utilisateur."""
     return df[df["price"].between(PRICE_MIN, PRICE_MAX)]
+
+
+# Nombre minimal d'annonces pour qu'un arrondissement soit inclus dans un
+# classement : en dessous, le prix médian/l'occupation deviennent trop
+# instables (quelques annonces atypiques suffisent à faire basculer le rang).
+MIN_LISTINGS_FOR_RANKING = 30
+
+
+def neighbourhood_summary(df: pd.DataFrame, min_listings: int = 0) -> pd.DataFrame:
+    """Agrège les 3 KPIs par arrondissement.
+
+    `jours_occupes_proxy` = 365 - disponibilité moyenne affichée. On l'utilise
+    plutôt que la disponibilité brute car, dans ce dataset, les quartiers
+    centraux et chers affichent PLUS de jours disponibles (moins occupés) que
+    les quartiers périphériques bon marché : la disponibilité brute mesurait
+    donc l'inverse de ce qu'on veut montrer (occupation/demande, pas de la
+    place libre pour un nouvel entrant). C'est un proxy, pas un taux de
+    réservation réel (un jour bloqué au calendrier n'est pas forcément loué).
+    """
+    summary = (
+        df.groupby("neighbourhood")
+        .agg(
+            prix_median=("price", "median"),
+            jours_occupes_proxy=("availability_365", lambda s: 365 - s.mean()),
+            nb_concurrents=("id", "count"),
+        )
+        .round(0)
+        .reset_index()
+    )
+    if min_listings:
+        summary = summary[summary["nb_concurrents"] >= min_listings]
+    return summary

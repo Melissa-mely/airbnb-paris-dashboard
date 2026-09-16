@@ -3,14 +3,14 @@ import pandas as pd
 import plotly.express as px
 import streamlit as st
 
-from data_utils import filter_data, load_data, paris_baseline, sidebar_filters
+from data_utils import filter_data, load_data, neighbourhood_summary, paris_baseline, sidebar_filters
 
 st.set_page_config(page_title="Où louer à Paris ?", page_icon="🏠", layout="wide")
 
-st.title("🏠 Où louer sur Airbnb à Paris sans se heurter à un marché déjà saturé ?")
+st.title("🏠 Où louer sur Airbnb à Paris pour le meilleur rapport prix/occupation ?")
 st.markdown(
-    "Les arrondissements **périphériques** affichent des prix nettement plus bas et "
-    "plus de disponibilité que le centre, déjà cher et occupé en continu."
+    "Les arrondissements **périphériques** combinent des prix nettement plus bas et une "
+    "occupation estimée au moins aussi forte que le centre, pourtant bien plus cher."
 )
 
 df = load_data()
@@ -27,8 +27,8 @@ if filtered.empty:
 median_price = filtered["price"].median()
 median_price_paris = baseline["price"].median()
 
-avg_availability = filtered["availability_365"].mean()
-avg_availability_paris = baseline["availability_365"].mean()
+occupied_days = 365 - filtered["availability_365"].mean()
+occupied_days_paris = 365 - baseline["availability_365"].mean()
 
 n_competitors = len(filtered)
 
@@ -40,15 +40,17 @@ col1.metric(
     delta_color="inverse",
 )
 col2.metric(
-    "Disponibilité moyenne",
-    f"{avg_availability:.0f} j/an",
-    delta=f"{avg_availability - avg_availability_paris:+.0f} j vs moyenne Paris",
+    "Occupation estimée",
+    f"{occupied_days:.0f} j/an",
+    delta=f"{occupied_days - occupied_days_paris:+.0f} j vs moyenne Paris",
 )
 col3.metric("Concurrents actifs (sélection)", f"{n_competitors:,}".replace(",", " "))
 
 st.caption(
     "Comparaisons faites contre la médiane/moyenne Paris entière (prix nettoyé 10-2000€), "
-    "indépendamment des filtres, pour situer la sélection actuelle."
+    "indépendamment des filtres, pour situer la sélection actuelle. Occupation estimée = "
+    "365 − disponibilité affichée (proxy : un jour bloqué au calendrier n'est pas "
+    "forcément loué, mais reste un bon indicateur de demande relative entre quartiers)."
 )
 
 st.divider()
@@ -77,20 +79,15 @@ with map_col:
 
 with chart_col:
     st.subheader("Prix médian par arrondissement")
-    by_neigh = (
-        filtered.groupby("neighbourhood")["price"]
-        .median()
-        .sort_values()
-        .reset_index()
-    )
+    by_neigh = neighbourhood_summary(filtered).sort_values("prix_median")
     fig_bar = px.bar(
         by_neigh,
-        x="price",
+        x="prix_median",
         y="neighbourhood",
         orientation="h",
-        color="price",
+        color="prix_median",
         color_continuous_scale="RdYlGn_r",
-        labels={"price": "Prix médian (€/nuit)", "neighbourhood": ""},
+        labels={"prix_median": "Prix médian (€/nuit)", "neighbourhood": ""},
         height=480,
     )
     fig_bar.update_layout(margin=dict(l=0, r=0, t=10, b=0), coloraxis_showscale=False)
