@@ -1,7 +1,15 @@
 import plotly.express as px
 import streamlit as st
 
-from data_utils import COLOR_SCALE, MIN_LISTINGS_FOR_RANKING, filter_data, load_data, neighbourhood_summary, sidebar_filters
+from data_utils import (
+    COLOR_SCALE,
+    MIN_LISTINGS_FOR_RANKING,
+    color_domains,
+    filter_data,
+    load_data,
+    neighbourhood_summary,
+    sidebar_filters,
+)
 
 st.set_page_config(page_title="Top opportunités", page_icon="🏆", layout="wide")
 
@@ -24,6 +32,7 @@ st.info(
 )
 
 df = load_data()
+domains = color_domains(df)
 room_types, neighbourhoods, price_range = sidebar_filters(df)
 filtered = filter_data(df, room_types, neighbourhoods, price_range)
 
@@ -71,6 +80,7 @@ fig_score = px.bar(
     orientation="h",
     color="score",
     color_continuous_scale=COLOR_SCALE,
+    range_color=domains["score"],
     labels={"score": "Score (rang moyen, plus bas = mieux)", "neighbourhood": ""},
     height=550,
 )

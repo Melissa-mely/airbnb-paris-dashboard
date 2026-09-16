@@ -1,7 +1,7 @@
 import plotly.express as px
 import streamlit as st
 
-from data_utils import COLOR_SCALE, filter_data, load_data, neighbourhood_summary, sidebar_filters
+from data_utils import COLOR_SCALE, color_domains, filter_data, load_data, neighbourhood_summary, sidebar_filters
 
 st.set_page_config(page_title="Comparateur de quartiers", page_icon="📊", layout="wide")
 
@@ -12,6 +12,7 @@ st.markdown(
 )
 
 df = load_data()
+domains = color_domains(df)
 room_types, neighbourhoods, price_range = sidebar_filters(df)
 filtered = filter_data(df, room_types, neighbourhoods, price_range)
 
@@ -27,7 +28,12 @@ busiest = summary.loc[summary["jours_occupes_proxy"].idxmax()]
 price_spread = summary["prix_median"].max() - summary["prix_median"].min()
 
 k1, k2, k3 = st.columns(3)
-k1.metric("Écart de prix entre quartiers affichés", f"{price_spread:.0f} €")
+k1.metric(
+    "Écart de prix entre quartiers affichés",
+    f"{price_spread:.0f} €",
+    f"{summary['prix_median'].min():.0f} € – {summary['prix_median'].max():.0f} €",
+    delta_color="off",
+)
 k2.metric(
     "Quartier le + abordable",
     cheapest["neighbourhood"],
@@ -59,6 +65,7 @@ with col1:
         orientation="h",
         color="prix_median",
         color_continuous_scale=COLOR_SCALE,
+        range_color=domains["prix_median"],
         labels={"prix_median": "Prix médian (€/nuit)"},
         height=550,
     )
@@ -74,6 +81,7 @@ with col2:
         orientation="h",
         color="nb_concurrents",
         color_continuous_scale=COLOR_SCALE,
+        range_color=domains["nb_concurrents"],
         labels={"nb_concurrents": "Annonces concurrentes"},
         height=550,
     )

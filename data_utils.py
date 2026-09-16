@@ -130,3 +130,30 @@ def neighbourhood_summary(df: pd.DataFrame, min_listings: int = 0) -> pd.DataFra
     if min_listings:
         summary = summary[summary["nb_concurrents"] >= min_listings]
     return summary
+
+
+@st.cache_data
+def color_domains(df: pd.DataFrame) -> dict[str, tuple[float, float]]:
+    """Domaines de couleur fixes, calculés une fois sur Paris entière (non
+    affectés par les filtres room_type/quartier/prix). Sans ça, la teinte
+    d'un même quartier change selon la sélection en cours (la couleur se
+    recalibre sur le min/max du sous-ensemble filtré), ce qui donne une
+    impression de couleurs qui "sautent" à chaque changement de filtre.
+    """
+    baseline_summary = neighbourhood_summary(paris_baseline(df))
+    n_ranked = len(neighbourhood_summary(paris_baseline(df), min_listings=MIN_LISTINGS_FOR_RANKING))
+    return {
+        "prix_median": (
+            float(baseline_summary["prix_median"].min()),
+            float(baseline_summary["prix_median"].max()),
+        ),
+        "jours_occupes_proxy": (
+            float(baseline_summary["jours_occupes_proxy"].min()),
+            float(baseline_summary["jours_occupes_proxy"].max()),
+        ),
+        "nb_concurrents": (
+            float(baseline_summary["nb_concurrents"].min()),
+            float(baseline_summary["nb_concurrents"].max()),
+        ),
+        "score": (1.0, float(n_ranked)),
+    }

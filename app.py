@@ -3,6 +3,8 @@ import streamlit as st
 
 from data_utils import (
     COLOR_SCALE,
+    PRICE_MIN,
+    color_domains,
     filter_data,
     load_data,
     neighbourhood_summary,
@@ -10,6 +12,8 @@ from data_utils import (
     sidebar_filters,
     value_to_hex,
 )
+
+MAP_PRICE_CAP = 600  # dégradé de la carte plafonné pour rester lisible
 
 st.set_page_config(page_title="Où louer à Paris ?", page_icon="🏠", layout="wide")
 
@@ -20,6 +24,7 @@ st.markdown(
 )
 
 df = load_data()
+domains = color_domains(df)
 room_types, neighbourhoods, price_range = sidebar_filters(df)
 
 filtered = filter_data(df, room_types, neighbourhoods, price_range)
@@ -81,12 +86,17 @@ with map_col:
     sample = filtered.sample(min(4000, len(filtered)), random_state=0).copy()
 
     # Dégradé de bleu clair -> foncé selon le prix (une seule teinte, cohérente
-    # avec les autres graphiques). Clippé à 600€ : au-delà, quelques annonces
-    # très chères écraseraient le dégradé pour tout le reste des points.
-    sample["couleur"] = value_to_hex(sample["price"], price_range[0], min(price_range[1], 600))
+    # avec les autres graphiques). Domaine FIXE (10€-600€, indépendant du
+    # filtre de prix choisi) pour que la teinte d'une annonce à 150€ reste la
+    # même quels que soient les filtres actifs — sinon les couleurs de la
+    # carte "sautent" à chaque changement de filtre, ce qui brouille la lecture.
+    sample["couleur"] = value_to_hex(sample["price"], PRICE_MIN, MAP_PRICE_CAP)
 
     st.map(sample, latitude="latitude", longitude="longitude", color="couleur", size=25)
-    st.caption("Plus foncé = plus cher (dégradé de prix, clippé à 600€/nuit pour la lisibilité).")
+    st.caption(
+        f"Plus foncé = plus cher (dégradé fixe {PRICE_MIN}€-{MAP_PRICE_CAP}€/nuit, "
+        "ne varie pas avec les filtres)."
+    )
 
 with chart_col:
     st.subheader("Prix médian par arrondissement")
@@ -98,6 +108,7 @@ with chart_col:
         orientation="h",
         color="prix_median",
         color_continuous_scale=COLOR_SCALE,
+        range_color=domains["prix_median"],
         labels={"prix_median": "Prix médian (€/nuit)", "neighbourhood": ""},
         height=480,
     )
