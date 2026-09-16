@@ -1,7 +1,16 @@
 import plotly.express as px
 import streamlit as st
 
-from data_utils import COLOR_SCALE, color_domains, filter_data, load_data, neighbourhood_summary, sidebar_filters
+from data_utils import (
+    COLOR_SCALE,
+    active_filters_caption,
+    color_domains,
+    filter_data,
+    load_data,
+    neighbourhood_summary,
+    sidebar_filters,
+    style_minimal,
+)
 
 st.set_page_config(page_title="Comparateur de quartiers", page_icon="📊", layout="wide")
 
@@ -19,6 +28,8 @@ filtered = filter_data(df, room_types, neighbourhoods, price_range)
 if filtered.empty:
     st.warning("Aucune annonce ne correspond à cette sélection de filtres.")
     st.stop()
+
+st.caption(active_filters_caption(df, room_types, neighbourhoods, price_range))
 
 summary = neighbourhood_summary(filtered).sort_values("prix_median")
 
@@ -69,7 +80,7 @@ with col1:
         labels={"prix_median": "Prix médian (€/nuit)"},
         height=550,
     )
-    fig_price.update_layout(coloraxis_showscale=False, margin=dict(l=0, r=0, t=10, b=0))
+    style_minimal(fig_price)
     st.plotly_chart(fig_price, use_container_width=True)
 
 with col2:
@@ -85,7 +96,7 @@ with col2:
         labels={"nb_concurrents": "Annonces concurrentes"},
         height=550,
     )
-    fig_comp.update_layout(coloraxis_showscale=False, margin=dict(l=0, r=0, t=10, b=0))
+    style_minimal(fig_comp)
     st.plotly_chart(fig_comp, use_container_width=True)
 
 st.subheader("Détail chiffré")

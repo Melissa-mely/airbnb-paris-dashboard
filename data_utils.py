@@ -85,6 +85,26 @@ def sidebar_filters(df: pd.DataFrame):
     return room_types, neighbourhoods, price_range
 
 
+def active_filters_caption(df: pd.DataFrame, room_types, neighbourhoods, price_range) -> str:
+    """Résumé lisible des filtres actifs, affiché dans le contenu principal
+    de chaque page (pas seulement dans la sidebar, facilement masquée ou
+    ignorée pendant une démo)."""
+
+    def summarize(selected, all_options, label):
+        if set(selected) == set(all_options):
+            return f"tous les {label}"
+        if len(selected) <= 3:
+            return ", ".join(selected)
+        return f"{len(selected)}/{len(all_options)} {label}"
+
+    room_txt = summarize(room_types, sorted(df["room_type"].unique()), "types de logement")
+    neigh_txt = summarize(neighbourhoods, sorted(df["neighbourhood"].unique()), "arrondissements")
+    return (
+        f"🔎 Filtres actifs — Type : {room_txt} · Quartier : {neigh_txt} · "
+        f"Prix : {price_range[0]}€–{price_range[1]}€"
+    )
+
+
 def filter_data(df: pd.DataFrame, room_types, neighbourhoods, price_range) -> pd.DataFrame:
     mask = (
         df["room_type"].isin(room_types)
@@ -157,3 +177,19 @@ def color_domains(df: pd.DataFrame) -> dict[str, tuple[float, float]]:
         ),
         "score": (1.0, float(n_ranked)),
     }
+
+
+def style_minimal(fig):
+    """Habillage minimaliste commun à tous les bar charts : fond transparent
+    (s'intègre au thème clair/sombre de Streamlit), pas de grille verticale
+    inutile, pas de barre de couleur redondante (l'axe des valeurs suffit)."""
+    fig.update_layout(
+        plot_bgcolor="rgba(0,0,0,0)",
+        paper_bgcolor="rgba(0,0,0,0)",
+        coloraxis_showscale=False,
+        margin=dict(l=0, r=0, t=10, b=0),
+        font=dict(size=13),
+    )
+    fig.update_xaxes(showgrid=True, gridcolor="rgba(0,0,0,0.08)", zeroline=False)
+    fig.update_yaxes(showgrid=False, zeroline=False)
+    return fig

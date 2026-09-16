@@ -4,12 +4,14 @@ import streamlit as st
 from data_utils import (
     COLOR_SCALE,
     PRICE_MIN,
+    active_filters_caption,
     color_domains,
     filter_data,
     load_data,
     neighbourhood_summary,
     paris_baseline,
     sidebar_filters,
+    style_minimal,
     value_to_hex,
 )
 
@@ -33,6 +35,8 @@ baseline = paris_baseline(df)
 if filtered.empty:
     st.warning("Aucune annonce ne correspond à cette sélection de filtres.")
     st.stop()
+
+st.caption(active_filters_caption(df, room_types, neighbourhoods, price_range))
 
 # --- Zone KPIs -----------------------------------------------------------
 median_price = filtered["price"].median()
@@ -112,7 +116,7 @@ with chart_col:
         labels={"prix_median": "Prix médian (€/nuit)", "neighbourhood": ""},
         height=480,
     )
-    fig_bar.update_layout(margin=dict(l=0, r=0, t=10, b=0), coloraxis_showscale=False)
+    style_minimal(fig_bar)
     st.plotly_chart(fig_bar, use_container_width=True)
 
 st.caption(
