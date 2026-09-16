@@ -1,3 +1,4 @@
+import numpy as np
 import pandas as pd
 import plotly.express as px
 import streamlit as st
@@ -61,10 +62,15 @@ with map_col:
 
     # Découpage en 3 tranches de prix pour un canal couleur simple à lire
     # (vert = abordable, orange = moyen, rouge = cher), plutôt qu'un dégradé
-    # continu difficile à interpréter sur une petite carte.
-    tiers = pd.qcut(sample["price"], q=3, labels=["Abordable", "Moyen", "Cher"], duplicates="drop")
-    color_map = {"Abordable": "#2ecc71", "Moyen": "#f39c12", "Cher": "#e74c3c"}
-    sample["couleur"] = tiers.map(color_map)
+    # continu difficile à interpréter sur une petite carte. Seuils calculés
+    # par quantiles puis appliqués avec np.select (pas de dtype "category",
+    # dont le .map() est source de bugs selon les versions de pandas).
+    low, high = sample["price"].quantile([1 / 3, 2 / 3])
+    sample["couleur"] = np.select(
+        [sample["price"] <= low, sample["price"] <= high],
+        ["#2ecc71", "#f39c12"],
+        default="#e74c3c",
+    )
 
     st.map(sample, latitude="latitude", longitude="longitude", color="couleur", size=25)
     st.caption("🟢 Abordable · 🟠 Moyen · 🔴 Cher — tercile de prix sur la sélection filtrée.")
