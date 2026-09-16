@@ -4,6 +4,7 @@ Centralisé ici pour que app.py et pages/*.py utilisent exactement le même
 nettoyage et les mêmes filtres (cohérence des chiffres affichés).
 """
 
+import numpy as np
 import pandas as pd
 import streamlit as st
 
@@ -13,10 +14,25 @@ import streamlit as st
 PRICE_MIN, PRICE_MAX = 10, 2000
 
 # Échelle de couleur unique utilisée sur tous les graphiques du dashboard :
-# vert = favorable à l'investisseur, rouge = défavorable. Appliquée à des
-# métriques "plus c'est bas mieux c'est" (prix, concurrence, score) pour que
-# la lecture couleur reste cohérente d'une page à l'autre.
-COLOR_SCALE = "RdYlGn_r"
+# une seule teinte (bleu), du clair au foncé. Les valeurs affichées sont des
+# magnitudes (prix, concurrence, score), pas des écarts positif/négatif
+# autour d'un centre : un dégradé séquentiel à une teinte est donc le bon
+# choix (pas un rouge-jaune-vert, réservé aux données de polarité).
+COLOR_SCALE = "Blues"
+_GRADIENT_LIGHT = np.array([222, 235, 247])  # bleu très clair
+_GRADIENT_DARK = np.array([8, 48, 107])  # bleu foncé
+
+
+def value_to_hex(series: pd.Series, vmin: float, vmax: float) -> pd.Series:
+    """Convertit une série numérique en dégradé de bleu (hex), pour les
+    widgets (comme st.map) qui attendent une couleur explicite par ligne
+    plutôt qu'une colorscale continue appliquée automatiquement."""
+    t = ((series.clip(vmin, vmax) - vmin) / (vmax - vmin)).fillna(0).clip(0, 1)
+    rgb = _GRADIENT_LIGHT + t.to_numpy()[:, None] * (_GRADIENT_DARK - _GRADIENT_LIGHT)
+    return pd.Series(
+        [f"#{int(r):02x}{int(g):02x}{int(b):02x}" for r, g, b in rgb],
+        index=series.index,
+    )
 
 
 @st.cache_data

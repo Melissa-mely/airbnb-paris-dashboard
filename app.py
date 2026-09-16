@@ -1,9 +1,15 @@
-import numpy as np
-import pandas as pd
 import plotly.express as px
 import streamlit as st
 
-from data_utils import COLOR_SCALE, filter_data, load_data, neighbourhood_summary, paris_baseline, sidebar_filters
+from data_utils import (
+    COLOR_SCALE,
+    filter_data,
+    load_data,
+    neighbourhood_summary,
+    paris_baseline,
+    sidebar_filters,
+    value_to_hex,
+)
 
 st.set_page_config(page_title="Où louer à Paris ?", page_icon="🏠", layout="wide")
 
@@ -74,20 +80,13 @@ with map_col:
     st.subheader("Répartition géographique (échantillon)")
     sample = filtered.sample(min(4000, len(filtered)), random_state=0).copy()
 
-    # Découpage en 3 tranches de prix pour un canal couleur simple à lire
-    # (vert = abordable, orange = moyen, rouge = cher), plutôt qu'un dégradé
-    # continu difficile à interpréter sur une petite carte. Seuils calculés
-    # par quantiles puis appliqués avec np.select (pas de dtype "category",
-    # dont le .map() est source de bugs selon les versions de pandas).
-    low, high = sample["price"].quantile([1 / 3, 2 / 3])
-    sample["couleur"] = np.select(
-        [sample["price"] <= low, sample["price"] <= high],
-        ["#2ecc71", "#f39c12"],
-        default="#e74c3c",
-    )
+    # Dégradé de bleu clair -> foncé selon le prix (une seule teinte, cohérente
+    # avec les autres graphiques). Clippé à 600€ : au-delà, quelques annonces
+    # très chères écraseraient le dégradé pour tout le reste des points.
+    sample["couleur"] = value_to_hex(sample["price"], price_range[0], min(price_range[1], 600))
 
     st.map(sample, latitude="latitude", longitude="longitude", color="couleur", size=25)
-    st.caption("🟢 Abordable · 🟠 Moyen · 🔴 Cher — tercile de prix sur la sélection filtrée.")
+    st.caption("Plus foncé = plus cher (dégradé de prix, clippé à 600€/nuit pour la lisibilité).")
 
 with chart_col:
     st.subheader("Prix médian par arrondissement")
