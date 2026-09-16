@@ -14,13 +14,18 @@ import streamlit as st
 PRICE_MIN, PRICE_MAX = 10, 2000
 
 # Échelle de couleur unique utilisée sur tous les graphiques du dashboard :
-# une seule teinte (bleu), du clair au foncé. Les valeurs affichées sont des
-# magnitudes (prix, concurrence, score), pas des écarts positif/négatif
-# autour d'un centre : un dégradé séquentiel à une teinte est donc le bon
-# choix (pas un rouge-jaune-vert, réservé aux données de polarité).
-COLOR_SCALE = "Blues"
-_GRADIENT_LIGHT = np.array([222, 235, 247])  # bleu très clair
-_GRADIENT_DARK = np.array([8, 48, 107])  # bleu foncé
+# une seule teinte (bleu, ancrée sur le primaryColor de .streamlit/config.toml),
+# du clair au foncé. Les valeurs affichées sont des magnitudes (prix,
+# concurrence, score), pas des écarts positif/négatif autour d'un centre : un
+# dégradé séquentiel à une teinte est donc le bon choix (pas un
+# rouge-jaune-vert, réservé aux données de polarité). Les deux bornes restent
+# volontairement saturées (pas de quasi-blanc ni de quasi-noir) pour que le
+# dégradé reste visible et attire l'œil plutôt que de se diluer.
+_GRADIENT_LIGHT = np.array([191, 219, 254])  # bleu clair mais saturé (#bfdbfe)
+_GRADIENT_DARK = np.array([30, 58, 138])  # bleu vif et profond (#1e3a8a)
+COLOR_SCALE = [
+    f"#{int(r):02x}{int(g):02x}{int(b):02x}" for r, g, b in (_GRADIENT_LIGHT, _GRADIENT_DARK)
+]
 
 
 def value_to_hex(series: pd.Series, vmin: float, vmax: float) -> pd.Series:
