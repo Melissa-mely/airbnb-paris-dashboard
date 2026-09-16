@@ -1,5 +1,6 @@
 [theme]
-# Bleu aligné sur le dégradé des graphiques (COLOR_SCALE dans data_utils.py),
-# pour que les widgets (tags de filtre, curseur, boutons) ne détonnent plus
-# avec le rouge par défaut de Streamlit.
-primaryColor = "#2a78d6"
+# Bleu-gris discret pour les widgets (tags de filtre, curseur, boutons) :
+# assez neutre pour ne pas concurrencer visuellement les graphiques (dégradé
+# bleu plus saturé, voir COLOR_SCALE dans data_utils.py), tout en remplaçant
+# le rouge par défaut de Streamlit.
+primaryColor = "#94a3b8"
